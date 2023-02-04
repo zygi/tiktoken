@@ -6,7 +6,7 @@ rust-version = "1.57.0"
 
 [lib]
 name = "_tiktoken"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 pyo3 = { version = "0.17.3", features = ["extension-module"] }
