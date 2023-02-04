@@ -5,9 +5,14 @@ use std::collections::HashSet;
 use std::thread;
 
 use fancy_regex::Regex;
+
+#[cfg(feature = "python")]
 use pyo3::exceptions;
+#[cfg(feature = "python")]
 use pyo3::prelude::*;
+#[cfg(feature = "python")]
 use pyo3::types::{PyBytes, PyList, PyTuple};
+#[cfg(feature = "python")]
 use pyo3::PyResult;
 use rustc_hash::FxHashMap as HashMap;
 
@@ -123,7 +128,20 @@ fn hash_current_thread() -> usize {
 }
 
 const MAX_NUM_THREADS: usize = 128;
+
+#[cfg(feature = "python")]
 #[pyclass]
+pub struct CoreBPE {
+    encoder: HashMap<Vec<u8>, usize>,
+    special_tokens_encoder: HashMap<String, usize>,
+    decoder: HashMap<usize, Vec<u8>>,
+    special_tokens_decoder: HashMap<usize, Vec<u8>>,
+    regex_tls: Vec<Regex>,
+    special_regex_tls: Vec<Regex>,
+    sorted_token_bytes: Vec<Vec<u8>>,
+}
+
+#[cfg(not(feature = "python"))]
 pub struct CoreBPE {
     encoder: HashMap<Vec<u8>, usize>,
     special_tokens_encoder: HashMap<String, usize>,
@@ -433,6 +451,7 @@ impl CoreBPE {
     }
 }
 
+#[cfg(feature = "python")]
 #[pymethods]
 impl CoreBPE {
     #[new]
@@ -546,6 +565,7 @@ impl CoreBPE {
     }
 }
 
+#[cfg(feature = "python")]
 #[pymodule]
 fn _tiktoken(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<CoreBPE>()?;
