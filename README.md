@@ -1,3 +1,5 @@
+A fork of Tiktoken that makes some Rust symbols public, in order to create bindings for them.
+
 # ⏳ tiktoken
 
 tiktoken is a fast [BPE](https://en.wikipedia.org/wiki/Byte_pair_encoding) tokeniser for use with

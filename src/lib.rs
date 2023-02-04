@@ -124,7 +124,7 @@ fn hash_current_thread() -> usize {
 
 const MAX_NUM_THREADS: usize = 128;
 #[pyclass]
-struct CoreBPE {
+pub struct CoreBPE {
     encoder: HashMap<Vec<u8>, usize>,
     special_tokens_encoder: HashMap<String, usize>,
     decoder: HashMap<usize, Vec<u8>>,
@@ -146,7 +146,7 @@ impl CoreBPE {
         &self.special_regex_tls[hash_current_thread() % MAX_NUM_THREADS]
     }
 
-    fn _decode_native(&self, tokens: &[usize]) -> Vec<u8> {
+    pub fn _decode_native(&self, tokens: &[usize]) -> Vec<u8> {
         let mut ret = Vec::with_capacity(tokens.len() * 2);
         for token in tokens {
             let token_bytes = self
@@ -174,7 +174,7 @@ impl CoreBPE {
         ret
     }
 
-    fn _encode_native(&self, text: &str, allowed_special: &HashSet<&str>) -> (Vec<usize>, usize) {
+    pub fn _encode_native(&self, text: &str, allowed_special: &HashSet<&str>) -> (Vec<usize>, usize) {
         let special_regex = self._get_tl_special_regex();
         let regex = self._get_tl_regex();
         let mut ret = vec![];
@@ -386,16 +386,15 @@ impl CoreBPE {
     }
 }
 
-#[pymethods]
+
 impl CoreBPE {
-    #[new]
-    fn new(
+    pub fn new_native(
         encoder: HashMap<Vec<u8>, usize>,
         special_tokens_encoder: HashMap<String, usize>,
         pattern: &str,
-    ) -> PyResult<Self> {
+    ) -> Result<Self, String> {
         let regex = Regex::new(pattern)
-            .map_err(|e| PyErr::new::<exceptions::PyValueError, _>(e.to_string()))?;
+            .map_err(|e| e.to_string())?;
 
         let special_regex = {
             let _parts = special_tokens_encoder
@@ -403,7 +402,7 @@ impl CoreBPE {
                 .map(|s| fancy_regex::escape(s))
                 .collect::<Vec<_>>();
             Regex::new(&_parts.join("|"))
-                .map_err(|e| PyErr::new::<exceptions::PyValueError, _>(e.to_string()))?
+                .map_err(|e| e.to_string())?
         };
 
         let decoder: HashMap<usize, Vec<u8>> =
@@ -431,6 +430,18 @@ impl CoreBPE {
                 .collect(),
             sorted_token_bytes,
         })
+    }
+}
+
+#[pymethods]
+impl CoreBPE {
+    #[new]
+    fn new(
+        encoder: HashMap<Vec<u8>, usize>,
+        special_tokens_encoder: HashMap<String, usize>,
+        pattern: &str,
+    ) -> PyResult<Self> {
+        CoreBPE::new_native(encoder, special_tokens_encoder, pattern).map_err(|e| PyErr::new::<exceptions::PyValueError, _>(e))
     }
 
     // ====================
